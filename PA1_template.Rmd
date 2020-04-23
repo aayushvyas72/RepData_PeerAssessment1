@@ -322,4 +322,4 @@ print(plot4)
 
 ## All of the R code needed to reproduce the results (numbers, plots, etc.) in the report
 
-All plots that are created are also uploaded along with this file.
+All plots that are created are also uploaded along with this file in the subfolder figures.
