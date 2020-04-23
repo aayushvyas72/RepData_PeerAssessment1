@@ -1,25 +1,325 @@
 ---
-title: "Reproducible Research: Peer Assessment 1"
-output: 
-  html_document:
-    keep_md: true
+title: 'Course Project: Reproducible Research'
+author: "Aayush Vyas"
+date: "23/04/2020"
+output: html_document
 ---
 
+## Instructions for Assignment
 
-## Loading and preprocessing the data
+1. Code for reading in the dataset and/or processing the data
+2. Histogram of the total number of steps taken each day
+3. Mean and median number of steps taken each day
+4. Time series plot of the average number of steps taken
+5. The 5-minute interval that, on average, contains the maximum number of steps
+6. Code to describe and show a strategy for imputing missing data
+7. Histogram of the total number of steps taken each day after missing values are imputed
+8. Panel plot comparing the average number of steps taken per 5-minute interval across weekdays and weekends
+9. All of the R code needed to reproduce the results (numbers, plots, etc.) in the report
+
+## Code for reading in the dataset and/or processing the data
+
+First, will start with loading libraries which will be required later.
+
+```{r, echo = TRUE}
+
+library(ggplot2)
+library(gridExtra)
+
+```
+
+After loading the required libraries, dowloading the data from the given url in the curent working directory and unzipping the downloaded file.
+The data is then read and stored as a data frame in a variable 'df'.
+
+```{r, echo = TRUE}
+
+url <- "https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip"
+download.file(url, "Assignment_Data.zip")
+unzip("Assignment_Data.zip")
+
+df <- read.csv("activity.csv", stringsAsFactors = FALSE)
+
+```
+
+Exploring the basics of data.
+
+```{r, echo = TRUE}
+
+str(df)
+
+```
+
+Here, it can be seen that column containing dates is readed as character strings. 
+Therefore, changing it's data type to dates.
+
+```{r, echo = TRUE}
+
+df$date <- as.Date(df$date)
+str(df)
+
+```
+
+Looking few entries of df.
+
+```{r, echo = TRUE}
+
+head(df)
+
+```
+
+## Histogram of the total number of steps taken each day
+
+Subsetting the original dataset to dataset only containing total steps taken each day, and corresponding date and storing it in a variable 'stepseachday'
+
+```{r, echo = TRUE}
+
+stepseachday <- aggregate(steps ~ date, df, sum, na.rm = TRUE)
+
+```
+
+Making a histogram plot of total steps taken at each date using ggplot function and storing it in a variable 'g1'. 
+To show the plot, printing variable 'g1'.
+Storing the plot in a variable as it will be used later for storing in a png file.
+
+```{r, echo = TRUE}
+
+g1 <- ggplot(stepseachday, aes(date, steps)) +
+     geom_bar(stat = "identity") +
+     ggtitle("Total steps each day by date") +
+     xlab("Date") + ylab("Steps")
+print(g1)
+
+```
 
 
+Now, making another histogram plot of frequency vs total steps taken in a day using qplot function and storing it in a variable 'g2'.
+To show the plot, priting variable 'g2'.
 
-## What is mean total number of steps taken per day?
+```{r, echp = TRUE}
+
+g2 <- qplot(stepseachday$steps, geom = "histogram", binwidth = 5000,xlab = "Steps", 
+            ylab = "Frequency", main = "Total Steps")
+print(g1)
+
+```
+
+Saving both the plots in a png file, 'plot1.png'.
+The png file is saved in the working directory.
+
+```{r, echo = TRUE}
+
+ggsave("plot1.png", arrangeGrob(g1,g2))
+
+```
+
+## Mean and median number of steps taken each day
+
+Mean of number of steps taken each day is calculated using mean function and stored in variable meanstepseachday.
+
+```{r, echo = TRUE}
+
+meanstepseachday <- mean(stepseachday$steps)
+print(meanstepseachday)
+
+```
+
+Median of number of steps taken each day is calculated using median function and stored in variable medianstepseachday.
+
+```{r, echo = TRUE}
+
+medianstepseachday <- mean(stepseachday$steps)
+print(medianstepseachday)
+
+```
+
+## Time series plot of the average number of steps taken
+
+Subsetting the original dataset to dataset only containing average steps taken each interval and storing it in a variable 'stepseachinterval'
+
+```{r, echo = TRUE}
+
+stepseachinterval <- aggregate(steps ~ interval, df, mean, na.rm = TRUE)
+
+```
+
+Plotting the time series plot between average steps vs interval using ggplot function and saving the plot in png file, "plot2.png".
+
+```{r, echo = TRUE}
+
+png("plot2.png")
+
+plot2 <- ggplot(stepseachinterval, aes(interval, steps)) + geom_line() + 
+         ggtitle("Daily Activity Pattern")
+
+print(plot2)
+
+dev.off()
+
+print(plot2)
+
+```
+
+## The 5-minute interval that, on average, contains the maximum number of steps
+
+The 5-minute time interval with maximum number of steps averaged across all days is calculated using which.max() function.
+
+```{r, echo = TRUE}
+
+stepseachinterval$interval[which.max(stepseachinterval$steps)]
+
+```
+
+## Code to describe and show a strategy for imputing missing data
+
+First seeing how many missing values are there in each column.
+
+```{r, echo = TRUE}
+
+sum(is.na(df$day))
+sum(is.na(df$interval))
+sum(is.na(df$steps))
 
 
+```
 
-## What is the average daily activity pattern?
+As seen, only column steps contain the missing values.
+As given in the question, there are many methods which are also listed to impute these missing values. However, for the purpose of simplicity, imputing the missing values by the average of average steps taken in each day.
+
+```{r, echo = TRUE}
+
+nasteps <- mean(with(df, tapply(steps, date, mean, na.rm = TRUE)), na.rm = TRUE)
+df[is.na(df$steps),1] <- nasteps
+
+```
+
+Cross checking if there are many missing values now in data.
+
+```{r, echo = TRUE}
+
+sum(is.na(df$day))
+sum(is.na(df$interval))
+sum(is.na(df$steps))
+
+```
 
 
+## Histogram of the total number of steps taken each day after missing values are imputed
 
-## Imputing missing values
+Subsetting the dataset to dataset only containing total steps taken each day, and corresponding date and storing it in a variable 'stepseachdaynona'
 
+```{r, echo = TRUE}
 
+stepseachdaynona <- aggregate(steps ~ date, df, sum)
 
-## Are there differences in activity patterns between weekdays and weekends?
+```
+
+Making a histogram plot of total steps taken at each date using ggplot function and saving the plot in png file, "plot3.png".
+
+```{r, echo = TRUE}
+
+png("plot3.png")
+
+plot3 <- ggplot(stepseachdaynona, aes(date, steps)) + geom_bar(stat = "identity") +               ggtitle("Total steps each day by date post imputation") + xlab("Date") +                 ylab("Steps")
+
+print(plot3)
+
+dev.off()
+
+print(plot3)
+
+```
+
+Mean of number of steps taken each day is calculated using mean function and stored in variable meanstepseachdaynona.
+
+```{r, echo = TRUE}
+
+meanstepseachdaynona <- mean(stepseachdaynona$steps)
+print(meanstepseachdaynona)
+
+```
+
+Median of number of steps taken each day is calculated using median function and stored in variable medianstepseachdaynona.
+
+```{r, echo = TRUE}
+
+medianstepseachdaynona <- mean(stepseachdaynona$steps)
+print(medianstepseachdaynona)
+
+```
+
+Impact on mean and median by imputing missing values is calcuated.
+
+```{r, echo = TRUE}
+
+meandiff <- ((meanstepseachdaynona - meanstepseachday)/meanstepseachday) * 100
+mediandiff <- ((medianstepseachdaynona - medianstepseachday)/medianstepseachday) * 100
+
+paste("The difference in mean by imputing NA values in data is", meandiff , "%")
+paste("The difference in median by imputing NA values in data is", mediandiff , "%")
+
+```
+
+## Panel plot comparing the average number of steps taken per 5-minute interval across weekdays and weekends
+
+Adding another column 'day' to data representing the weekday at the corresponding date.
+
+```{r, ehco = TRUE}
+
+df$day <- weekdays(df$date)
+
+```
+
+Creating a vector 'weekday' containing all days of week that comes under category of weekday.
+
+```{r, ehco = TRUE}
+
+weekday <- c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday")
+
+```
+
+Modifying the column 'day' by values in it. If the value in it represents weekday, it will be modified to weekday and if value represents weekends it will be modified to weekend.
+Also, modifying the data type of all whole column from character to factor.
+
+```{r, echo = TRUE}
+
+df$day <- ifelse(df$day %in% weekday, "weekday", "weekend")
+df$day <- as.factor(df$day)
+
+```
+
+The column 'day' is a factor now with two levels. 
+It can be seen using the str function.
+
+```{r, echo = TRUE}
+
+str(df)
+
+```
+
+Subsetting the dataset to dataset only containing average steps taken each interval grouped by day, the corresponding interval, and day and storing it in a variable 'stepseachintervalbyday'
+
+```{r, echo = TRUE}
+
+stepseachintervalbyday <- aggregate(steps ~ interval + day, df, mean)
+
+```
+
+Making a panel plot containing the time series plot of average number of steps taken vs 5-minute interval using ggplot function and saving the plot in png file, "plot4.png".
+
+```{r, echo = TRUE}
+
+png("plot4.png")
+
+plot4 <- ggplot(stepseachintervalbyday, aes(interval, steps)) +geom_line() +                      facet_grid(day ~ .) + xlab("Interval") + ylab("Number of Steps")
+
+print(plot4)
+
+dev.off()
+
+print(plot4)
+
+```
+
+## All of the R code needed to reproduce the results (numbers, plots, etc.) in the report
+
+All plots that are created are also uploaded along with this file.
